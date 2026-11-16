@@ -1,0 +1,6 @@
+Contact: mailto:security@twojekorzenie.pl
+Contact: mailto:iod@twojekorzenie.pl
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: pl, en
+Canonical: https://twojekorzenie.pl/.well-known/security.txt
+Policy: https://twojekorzenie.pl/polityka-bezpieczenstwa

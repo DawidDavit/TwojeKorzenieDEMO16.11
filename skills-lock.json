@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "skills": {
+    "animate": {
+      "source": "https://github.com/emilkowalski/skills/archive/refs/heads/main.tar.gz",
+      "sourceUrl": "https://github.com/emilkowalski/skills/archive/refs/heads/main.tar.gz",
+      "sourceType": "download",
+      "skillPath": "skills/animate/SKILL.md",
+      "computedHash": "c622e29fa956aea703dc4e2b8726d9a017d438beb284a60bc3fdb2540c602102"
+    },
+    "ask-emil": {
+      "source": "https://github.com/emilkowalski/skills/archive/refs/heads/main.tar.gz",
+      "sourceUrl": "https://github.com/emilkowalski/skills/archive/refs/heads/main.tar.gz",
+      "sourceType": "download",
+      "skillPath": "skills/ask-emil/SKILL.md",
+      "computedHash": "e7a92fe034a4151a27fbe2fad8813ffd18a9c98d6db8689930a1fdb3a7d536f5"
+    },
+    "frontend-design": {
+      "source": "https://raw.githubusercontent.com/anthropics/skills/main/skills/frontend-design/SKILL.md",
+      "sourceUrl": "https://raw.githubusercontent.com/anthropics/skills/main/skills/frontend-design/SKILL.md",
+      "sourceType": "download",
+      "skillPath": "SKILL.md",
+      "computedHash": "c29111f98c954f90792f11eb96b1518ab667e0be7ebaa51be1eded9361c3a93b"
+    },
+    "review-animations": {
+      "source": "https://github.com/emilkowalski/skills/archive/refs/heads/main.tar.gz",
+      "sourceUrl": "https://github.com/emilkowalski/skills/archive/refs/heads/main.tar.gz",
+      "sourceType": "download",
+      "skillPath": "skills/review-animations/SKILL.md",
+      "computedHash": "50f1de2394b88bb3433eca1e30da6866a4e310963d872a66af20ca77fd77f07d"
+    }
+  }
+}
