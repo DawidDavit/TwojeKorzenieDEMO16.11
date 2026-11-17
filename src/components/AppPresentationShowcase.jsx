@@ -124,8 +124,10 @@ function easeOutCubic(t) {
 export default function AppPresentationShowcase({ onEnterPortal }) {
   const trackRef = useRef(null);
   const frameRef = useRef(null);
+  const stageRef = useRef(null);
   const tileRefs = useRef([]);
   const progressTextRef = useRef(null);
+  const progressBarRef = useRef(null);
   const selectedTileRef = useRef(null);
 
   const [selectedTile, setSelectedTile] = useState(null);
@@ -161,8 +163,11 @@ export default function AppPresentationShowcase({ onEnterPortal }) {
       if (progressTextRef.current) {
         progressTextRef.current.textContent =
           selectedTileRef.current !== null
-            ? `Wybrano moduł 0${selectedTileRef.current} · Kliknij miniaturę poniżej, aby przełączyć`
-            : `Rozłożenie podczas przewijania: ${spreadPct}%`;
+            ? `Wybrano moduł 0${selectedTileRef.current} · Kliknij miniaturę, aby przełączyć`
+            : `Rozłożenie: ${spreadPct}%`;
+      }
+      if (progressBarRef.current) {
+        progressBarRef.current.style.transform = `scaleX(${progress.toFixed(3)})`;
       }
 
       // Jeśli użytkownik przewinie w górę poniżej 55%, wracamy płynnie do stosu
@@ -174,49 +179,58 @@ export default function AppPresentationShowcase({ onEnterPortal }) {
       const spreadReady = progress >= 0.88;
       setIsFullySpread((prev) => (prev !== spreadReady ? spreadReady : prev));
 
-      const spreadScale = vw < 640 ? 0.34 : vw < 1024 ? 0.62 : 1;
+      const containerW = frame.clientWidth || vw;
+      const cardW = stageRef.current?.offsetWidth || clamp(containerW * 0.58, 210, 340);
+      const isMobile = vw < 640;
       const activeId = selectedTileRef.current;
 
-      // Tryb wybrany (jak na szkicu: wybrany kafelek duży u góry na środku, pozostałe 4 małe niżej w doku)
+      // Tryb wybrany: wybrany kafelek na środku, pozostałe 4 proporcjonalnie w doku poniżej
       if (activeId !== null) {
         const others = SHOWCASE_TILES.filter((t) => t.id !== activeId);
-        // Kolejność w doku: 2 po lewej, 2 po prawej
         const dockSlots = [-1.65, -0.62, 0.62, 1.65];
-        const dockSpacing = vw < 640 ? 78 : vw < 1024 ? 106 : 128;
-        const dockY = vw < 640 ? 60 : 76;
-        const dockScale = vw < 640 ? 0.27 : 0.33;
+        const dockScale = clamp(containerW / 1180, 0.24, 0.34);
+        const dockSpacing = clamp((containerW - 36) * 0.115, 50, 134);
+        const selectedY = isMobile ? -20 : -44;
+        const dockY = clamp(cardW * 0.36, 48, 108);
 
         const targets = SHOWCASE_TILES.map((tile) => {
           if (tile.id === activeId) {
-            return { x: 0, y: -64, scale: vw < 640 ? 0.93 : 0.98, rot: 0 };
+            return { x: 0, y: selectedY, scale: isMobile ? 0.92 : 0.96, rot: 0 };
           }
           const slotIdx = others.findIndex((o) => o.id === tile.id);
           const slot = dockSlots[slotIdx] ?? 0;
           return {
             x: slot * dockSpacing,
-            y: dockY + Math.abs(slot) * 3,
+            y: dockY + Math.abs(slot) * 2.5,
             scale: dockScale,
-            rot: slot * 2.2
+            rot: slot * 2.1
           };
         });
         return { targets };
       }
 
-      // Tryb rozkładania podczas scrolla (0 -> 1)
+      // Tryb rozkładania podczas scrolla (0 -> 1) skalowany proporcjonalnie do szerokości ekranu
+      const maxSpreadX = Math.max(36, (containerW - cardW) / 2 - (isMobile ? 8 : 24));
+      const innerSpreadX = maxSpreadX * 0.52;
+      const outerSpreadX = maxSpreadX;
+      const innerRot = isMobile ? 2.2 : 3.2;
+      const outerRot = isMobile ? 4.0 : 5.6;
+
       const configs = {
         1: { x: 0, y: 0, rot: 0, scale: 1 - progress * 0.02 },
-        2: { x: -230 * spreadScale, y: 14, rot: -3.2, scale: 0.94 },
-        3: { x: 230 * spreadScale, y: 14, rot: 3.2, scale: 0.94 },
-        4: { x: -425 * spreadScale, y: 30, rot: -5.8, scale: 0.88 },
-        5: { x: 425 * spreadScale, y: 30, rot: 5.8, scale: 0.88 }
+        2: { x: -innerSpreadX, y: isMobile ? 8 : 14, rot: -innerRot, scale: isMobile ? 0.93 : 0.95 },
+        3: { x: innerSpreadX, y: isMobile ? 8 : 14, rot: innerRot, scale: isMobile ? 0.93 : 0.95 },
+        4: { x: -outerSpreadX, y: isMobile ? 16 : 28, rot: -outerRot, scale: isMobile ? 0.85 : 0.89 },
+        5: { x: outerSpreadX, y: isMobile ? 16 : 28, rot: outerRot, scale: isMobile ? 0.85 : 0.89 }
       };
 
+      const stackStep = isMobile ? 16 : 26;
       const stackedOffsets = {
         1: { y: 0, scale: 1 },
-        2: { y: -32, scale: 0.96 },
-        3: { y: -64, scale: 0.92 },
-        4: { y: -96, scale: 0.88 },
-        5: { y: -128, scale: 0.84 }
+        2: { y: -stackStep, scale: 0.96 },
+        3: { y: -stackStep * 2, scale: 0.92 },
+        4: { y: -stackStep * 3, scale: 0.88 },
+        5: { y: -stackStep * 4, scale: 0.84 }
       };
 
       const targets = SHOWCASE_TILES.map((tile) => {
@@ -350,6 +364,12 @@ export default function AppPresentationShowcase({ onEnterPortal }) {
             <div className="presentation-backdrop" aria-hidden="true">
               <div className="presentation-backdrop-ring presentation-backdrop-ring--outer" />
               <div className="presentation-backdrop-ring presentation-backdrop-ring--inner" />
+              <div className="presentation-backdrop-axis">
+                <span>1850</span>
+                <span>1900</span>
+                <span>1950</span>
+                <span>2026</span>
+              </div>
             </div>
 
             <div className="presentation-header">
@@ -422,6 +442,7 @@ export default function AppPresentationShowcase({ onEnterPortal }) {
               </aside>
 
               <div
+                ref={stageRef}
                 className="presentation-stage"
                 role="region"
                 aria-label="Interaktywna prezentacja modułów aplikacji"
@@ -682,7 +703,7 @@ export default function AppPresentationShowcase({ onEnterPortal }) {
               </div>
             </div>
 
-            {/* Pasek nawigacji modułów + wskaźnik rozłożenia */}
+            {/* Pasek nawigacji modułów + wskaźnik rozłożenia + podsumowanie archiwalne */}
             <div className={`presentation-controls ${selectedTile !== null ? 'has-selection' : ''}`}>
               <div className="presentation-tabs" role="tablist" aria-label="Wybierz moduł prezentacji">
                 {SHOWCASE_TILES.map((tile) => (
@@ -707,8 +728,24 @@ export default function AppPresentationShowcase({ onEnterPortal }) {
                   </button>
                 )}
               </div>
-              <div className="presentation-scroll-hint" aria-hidden="true">
-                <span ref={progressTextRef}>Rozłożenie podczas przewijania: 0%</span>
+
+              <div className="presentation-meta-row">
+                <div className="presentation-progress-wrap" aria-hidden="true">
+                  <div className="presentation-progress-track">
+                    <div ref={progressBarRef} className="presentation-progress-fill" />
+                  </div>
+                  <span ref={progressTextRef} className="presentation-scroll-hint">
+                    Rozłożenie: 0%
+                  </span>
+                </div>
+
+                <div className="presentation-pillars">
+                  <span>5 modułów w pakiecie</span>
+                  <span aria-hidden="true">·</span>
+                  <span>100% źródeł z archiwów</span>
+                  <span aria-hidden="true">·</span>
+                  <span>Telefon i komputer</span>
+                </div>
               </div>
             </div>
           </div>

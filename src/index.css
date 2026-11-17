@@ -575,7 +575,7 @@ button, input, select, textarea {
 /* Sekcja Prezentacji Aplikacji — 5 warstwowych kafelków rozsuwanych podczas scrolla */
 .presentation-section {
   position: relative;
-  padding: 1.75rem 0 2.5rem;
+  padding: clamp(1.5rem, 3vh, 2.5rem) 0 clamp(2rem, 4vh, 3rem);
   overflow-x: clip;
   background:
     radial-gradient(circle at 50% 42%, rgba(194, 154, 85, 0.14) 0%, rgba(243, 239, 229, 0) 62%),
@@ -587,7 +587,9 @@ button, input, select, textarea {
 .presentation-header {
   text-align: center;
   max-width: 720px;
-  margin: 0 auto 0.65rem;
+  margin: 0 auto 0.5rem;
+  position: relative;
+  z-index: 2;
 }
 
 .presentation-title {
@@ -610,8 +612,9 @@ button, input, select, textarea {
 
 .presentation-stage-wrap {
   position: relative;
-  padding-top: 2.75rem;
-  padding-bottom: 0.5rem;
+  padding: clamp(1.25rem, 3vh, 2.25rem) 0 clamp(0.75rem, 2vh, 1.25rem);
+  margin: auto 0;
+  z-index: 2;
 }
 
 .presentation-scroll-track {
@@ -622,8 +625,11 @@ button, input, select, textarea {
 .presentation-sticky-frame {
   position: sticky;
   top: 76px;
-  padding-top: 0.5rem;
-  padding-bottom: 0.75rem;
+  min-height: calc(100svh - 92px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(0.75rem, 2vh, 1.5rem) 0;
 }
 
 .presentation-backdrop {
@@ -639,12 +645,12 @@ button, input, select, textarea {
 .presentation-backdrop-ring {
   position: absolute;
   border-radius: 50%;
-  border: 1px dashed rgba(194, 154, 85, 0.2);
+  border: 1px dashed rgba(194, 154, 85, 0.22);
 }
 
 .presentation-backdrop-ring--outer {
-  width: min(820px, 84vw);
-  height: min(820px, 84vw);
+  width: min(860px, 86vw);
+  height: min(860px, 86vw);
 }
 
 .presentation-backdrop-ring--inner {
@@ -654,12 +660,32 @@ button, input, select, textarea {
   border-color: rgba(194, 154, 85, 0.14);
 }
 
+.presentation-backdrop-axis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  padding: 0 clamp(0.75rem, 3vw, 2.5rem);
+  border-top: 1px solid rgba(194, 154, 85, 0.16);
+}
+
+.presentation-backdrop-axis span {
+  margin-top: 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(158, 120, 54, 0.55);
+}
+
 .presentation-stage {
   position: relative;
-  height: clamp(400px, 51vh, 485px);
+  height: clamp(300px, min(46svh, 66vw), 500px);
   aspect-ratio: 210 / 297;
   width: auto;
-  max-width: 90vw;
+  max-width: 88vw;
   margin: 0 auto;
 }
 
@@ -1221,16 +1247,18 @@ button, input, select, textarea {
 }
 
 .presentation-controls {
-  margin-top: 0.85rem;
+  position: relative;
+  z-index: 3;
+  margin-top: 0.65rem;
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(194, 154, 85, 0.28);
+  backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  transition: transform 240ms var(--ease-out);
-}
-
-.presentation-controls.has-selection {
-  transform: translate3d(0, 88px, 0);
+  gap: 0.6rem;
 }
 
 .presentation-tabs {
@@ -1245,7 +1273,7 @@ button, input, select, textarea {
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.78);
   border: 1px solid rgba(194, 154, 85, 0.38);
   color: var(--forest-dark);
   cursor: pointer;
@@ -1264,10 +1292,54 @@ button, input, select, textarea {
   color: var(--forest-dark);
 }
 
+.presentation-meta-row {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1.25rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid rgba(194, 154, 85, 0.18);
+}
+
+.presentation-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.presentation-progress-track {
+  width: 96px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(194, 154, 85, 0.22);
+  overflow: hidden;
+}
+
+.presentation-progress-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--gold-base);
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+
 .presentation-scroll-hint {
   font-size: 0.76rem;
   font-weight: 600;
   color: var(--ink-muted);
+}
+
+.presentation-pillars {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--forest-dark);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1298,20 +1370,43 @@ button, input, select, textarea {
 }
 
 @media (max-width: 639px) {
+  .presentation-sticky-frame {
+    min-height: calc(100svh - 70px);
+    padding: 0.65rem 0;
+  }
+
   .presentation-stage {
-    height: 390px;
+    height: clamp(275px, 43svh, 350px);
     aspect-ratio: 210 / 297;
     width: auto;
-    max-width: 88vw;
+    max-width: 78vw;
+  }
+
+  .presentation-backdrop-axis {
+    display: none;
+  }
+
+  .presentation-controls {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .presentation-meta-row {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .presentation-pillars {
+    justify-content: center;
+    font-size: 0.72rem;
   }
 
   .showcase-tile {
-    padding: 0.95rem;
+    padding: 0.8rem;
   }
 
   .showcase-portrait-img,
   .showcase-svg-wrap {
-    height: 98px;
+    height: 86px;
   }
 }
 
@@ -1322,6 +1417,7 @@ button, input, select, textarea {
 
   .presentation-sticky-frame {
     position: static;
+    min-height: auto;
   }
 
   .showcase-tile {
