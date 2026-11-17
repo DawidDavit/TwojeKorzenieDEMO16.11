@@ -1426,3 +1426,133 @@ button, input, select, textarea {
     transform: translate3d(3px, 0, 0);
   }
 }
+
+/* Tryb pełnoekranowy mapy satelitarnej (Kartografia Historyczna) */
+@keyframes mapFullscreenEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.map-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  background-color: #0f1d17;
+  animation: mapFullscreenEnter 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.map-fullscreen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background-color: rgba(21, 37, 30, 0.96);
+  border-bottom: 1px solid rgba(194, 154, 85, 0.45);
+  color: #faf6ec;
+  flex-shrink: 0;
+}
+
+.map-control-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid #c29a55;
+  background-color: rgba(23, 47, 37, 0.92);
+  color: #faf6ec;
+  cursor: pointer;
+  transition: background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.map-control-btn:focus-visible,
+.map-fullscreen-close-btn:focus-visible,
+.map-fullscreen-pill:focus-visible {
+  outline: 2px solid #e5c98f;
+  outline-offset: 2px;
+}
+
+.map-fullscreen-close-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #c29a55;
+  background-color: rgba(23, 47, 37, 0.95);
+  color: #faf6ec;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms var(--ease-out), border-color 160ms var(--ease-out);
+}
+
+.map-fullscreen-kbd {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #e5c98f;
+  background-color: rgba(15, 29, 23, 0.75);
+  border: 1px solid rgba(194, 154, 85, 0.4);
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+}
+
+.map-fullscreen-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(194, 154, 85, 0.45);
+  background-color: rgba(23, 47, 37, 0.9);
+  color: #faf6ec;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 160ms var(--ease-out), border-color 160ms var(--ease-out);
+}
+
+.map-fullscreen-pill.is-active {
+  background-color: #c29a55;
+  border-color: #e5c98f;
+  color: #15251e;
+  font-weight: 700;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .map-control-btn:hover {
+    background-color: #244638;
+    border-color: #e5c98f;
+  }
+
+  .map-fullscreen-close-btn:hover {
+    background-color: #244638;
+    border-color: #e5c98f;
+  }
+
+  .map-fullscreen-pill:not(.is-active):hover {
+    background-color: #244638;
+    border-color: #e5c98f;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-fullscreen-overlay {
+    animation: none;
+  }
+
+  .map-control-btn,
+  .map-fullscreen-close-btn,
+  .map-fullscreen-pill {
+    transition: none;
+  }
+}

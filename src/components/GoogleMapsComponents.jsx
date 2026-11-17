@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Search, ExternalLink, Navigation, Check } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { MapPin, Search, ExternalLink, Navigation, Check, Maximize2, Minimize2 } from 'lucide-react';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
@@ -360,7 +361,17 @@ function latLngToTileFloat(lat, lng, zoom) {
   return { x, y, n };
 }
 
-function SatelliteCityMap({ residence, fallbackQuery }) {
+function SatelliteCityMap({
+  residence,
+  fallbackQuery,
+  isFullscreen = false,
+  onToggleFullscreen,
+  expandBtnRef,
+  zoom: controlledZoom,
+  setZoom: setControlledZoom,
+  pan: controlledPan,
+  setPan: setControlledPan
+}) {
   const containerRef = useRef(null);
   const [coords, setCoords] = useState(() => {
     if (residence?.lat && residence?.lng) {
@@ -368,19 +379,29 @@ function SatelliteCityMap({ residence, fallbackQuery }) {
     }
     return { lat: 51.7592, lng: 19.456 };
   });
-  const [zoom, setZoom] = useState(12);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [internalZoom, setInternalZoom] = useState(12);
+  const [internalPan, setInternalPan] = useState({ x: 0, y: 0 });
+  const zoom = controlledZoom !== undefined ? controlledZoom : internalZoom;
+  const setZoom = setControlledZoom || setInternalZoom;
+  const pan = controlledPan !== undefined ? controlledPan : internalPan;
+  const setPan = setControlledPan || setInternalPan;
   const [size, setSize] = useState({ w: 640, h: 360 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ active: false, startX: 0, startY: 0, origX: 0, origY: 0 });
   const lastWheelRef = useRef(0);
   const stateRef = useRef({ zoom: 12, pan: { x: 0, y: 0 }, size: { w: 640, h: 360 } });
+  const prevPlaceKeyRef = useRef(null);
 
   stateRef.current = { zoom, pan, size };
 
   useEffect(() => {
-    setPan({ x: 0, y: 0 });
-    setZoom(12);
+    const placeKey = `${residence?.city || ''}|${residence?.lat || ''}|${residence?.lng || ''}|${fallbackQuery || ''}`;
+    if (prevPlaceKeyRef.current !== null && prevPlaceKeyRef.current !== placeKey) {
+      setPan({ x: 0, y: 0 });
+      setZoom(12);
+    }
+    prevPlaceKeyRef.current = placeKey;
+
     if (residence?.lat && residence?.lng) {
       setCoords({ lat: Number(residence.lat), lng: Number(residence.lng) });
       return undefined;
@@ -689,7 +710,7 @@ function SatelliteCityMap({ residence, fallbackQuery }) {
         Ctrl + scroll: powiększenie · Przeciągnij, aby przesunąć
       </div>
 
-      {/* Panel sterowania zoomem i resetem w prawym górnym rogu */}
+      {/* Panel sterowania pełnym ekranem, zoomem i resetem w prawym górnym rogu */}
       <div
         style={{
           position: 'absolute',
@@ -703,20 +724,33 @@ function SatelliteCityMap({ residence, fallbackQuery }) {
         }}
         onPointerDown={(e) => e.stopPropagation()}
       >
+        {!isFullscreen && onToggleFullscreen && (
+          <button
+            ref={expandBtnRef}
+            type="button"
+            className="map-control-btn"
+            aria-label="Powiększ mapę do pełnego ekranu"
+            title="Powiększ do pełnego ekranu"
+            onClick={onToggleFullscreen}
+            style={{
+              width: '30px',
+              height: '30px',
+              marginBottom: '0.2rem'
+            }}
+          >
+            <Maximize2 size={14} strokeWidth={2.2} />
+          </button>
+        )}
         <button
           type="button"
+          className="map-control-btn"
           aria-label="Przybliż mapę"
           onClick={() => handleZoomStep(1)}
           style={{
             width: '30px',
             height: '30px',
-            borderRadius: '8px',
-            border: '1px solid #C29A55',
-            backgroundColor: 'rgba(23, 47, 37, 0.92)',
-            color: '#FAF6EC',
             fontWeight: 700,
-            fontSize: '0.95rem',
-            cursor: 'pointer'
+            fontSize: '0.95rem'
           }}
         >
           +
@@ -736,18 +770,14 @@ function SatelliteCityMap({ residence, fallbackQuery }) {
         </span>
         <button
           type="button"
+          className="map-control-btn"
           aria-label="Oddal mapę"
           onClick={() => handleZoomStep(-1)}
           style={{
             width: '30px',
             height: '30px',
-            borderRadius: '8px',
-            border: '1px solid #C29A55',
-            backgroundColor: 'rgba(23, 47, 37, 0.92)',
-            color: '#FAF6EC',
             fontWeight: 700,
-            fontSize: '0.95rem',
-            cursor: 'pointer'
+            fontSize: '0.95rem'
           }}
         >
           −
@@ -795,11 +825,50 @@ export function GoogleHeritageMap({ person }) {
 
   const [activeIdx, setActiveIdx] = useState(0);
   const [sdkReady, setSdkReady] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [mapZoom, setMapZoom] = useState(12);
+  const [mapPan, setMapPan] = useState({ x: 0, y: 0 });
   const mapContainerRef = useRef(null);
+  const expandBtnRef = useRef(null);
+  const closeBtnRef = useRef(null);
+  const wasFullscreenRef = useRef(false);
 
   useEffect(() => {
     setActiveIdx(0);
+    setMapZoom(12);
+    setMapPan({ x: 0, y: 0 });
   }, [person?.id]);
+
+  useEffect(() => {
+    if (!isFullscreen) {
+      if (wasFullscreenRef.current) {
+        wasFullscreenRef.current = false;
+        expandBtnRef.current?.focus();
+      }
+      return undefined;
+    }
+
+    wasFullscreenRef.current = true;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const focusTimer = setTimeout(() => {
+      closeBtnRef.current?.focus();
+    }, 30);
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsFullscreen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      clearTimeout(focusTimer);
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullscreen]);
 
   // Jeśli użytkownik skonfigurował klucz VITE_GOOGLE_MAPS_API_KEY, inicjalizujemy pełną mapę wektorową JS z markerami i polilinią szlaku
   useEffect(() => {
@@ -924,9 +993,39 @@ export function GoogleHeritageMap({ person }) {
         }}
       >
         {GOOGLE_MAPS_API_KEY && sdkReady ? (
-          <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
+          <>
+            <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
+            <button
+              ref={expandBtnRef}
+              type="button"
+              className="map-control-btn"
+              aria-label="Powiększ mapę do pełnego ekranu"
+              title="Powiększ do pełnego ekranu"
+              onClick={() => setIsFullscreen(true)}
+              style={{
+                position: 'absolute',
+                top: '0.65rem',
+                right: '0.65rem',
+                width: '32px',
+                height: '32px',
+                zIndex: 5
+              }}
+            >
+              <Maximize2 size={14} strokeWidth={2.2} />
+            </button>
+          </>
         ) : (
-          <SatelliteCityMap residence={currentRes} fallbackQuery={mapQuery} />
+          <SatelliteCityMap
+            residence={currentRes}
+            fallbackQuery={mapQuery}
+            isFullscreen={false}
+            onToggleFullscreen={() => setIsFullscreen(true)}
+            expandBtnRef={expandBtnRef}
+            zoom={mapZoom}
+            setZoom={setMapZoom}
+            pan={mapPan}
+            setPan={setMapPan}
+          />
         )}
 
         {/* Pływający pasek informacyjny na dole mapy */}
@@ -1018,6 +1117,152 @@ export function GoogleHeritageMap({ person }) {
           );
         })}
       </div>
+
+      {isFullscreen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="map-fullscreen-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Mapa pełnoekranowa: ${currentRes?.city || mapQuery}`}
+          >
+            <header className="map-fullscreen-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                <button
+                  ref={closeBtnRef}
+                  type="button"
+                  className="map-fullscreen-close-btn"
+                  onClick={() => setIsFullscreen(false)}
+                  aria-label="Zamknij pełny ekran"
+                >
+                  <Minimize2 size={15} strokeWidth={2.2} />
+                  <span>Zamknij</span>
+                  <kbd className="map-fullscreen-kbd">Esc</kbd>
+                </button>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    minWidth: 0,
+                    overflow: 'hidden'
+                  }}
+                >
+                  <Navigation size={14} color="#E5C98F" style={{ flexShrink: 0 }} />
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      fontSize: '0.92rem',
+                      color: '#FAF6EC',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {currentRes?.city || mapQuery}
+                  </span>
+                  {currentRes?.years && (
+                    <span
+                      style={{
+                        fontSize: '0.74rem',
+                        fontWeight: 600,
+                        color: '#E5C98F',
+                        backgroundColor: 'rgba(194, 154, 85, 0.16)',
+                        border: '1px solid rgba(194, 154, 85, 0.45)',
+                        borderRadius: '999px',
+                        padding: '0.1rem 0.5rem',
+                        flexShrink: 0
+                      }}
+                    >
+                      {currentRes.years}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <a
+                href={externalGoogleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: '#E5C98F',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  flexShrink: 0
+                }}
+              >
+                <span>Google Maps</span>
+                <ExternalLink size={13} />
+              </a>
+            </header>
+
+            <div style={{ flex: 1, position: 'relative', minHeight: 0, backgroundColor: '#15251E' }}>
+              {GOOGLE_MAPS_API_KEY && sdkReady ? (
+                <iframe
+                  title={`Mapa pełnoekranowa: ${currentRes?.city || mapQuery}`}
+                  src={embedUrl}
+                  style={{ width: '100%', height: '100%', border: 0 }}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              ) : (
+                <SatelliteCityMap
+                  residence={currentRes}
+                  fallbackQuery={mapQuery}
+                  isFullscreen={true}
+                  zoom={mapZoom}
+                  setZoom={setMapZoom}
+                  pan={mapPan}
+                  setPan={setMapPan}
+                />
+              )}
+
+              {residences.length > 1 && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '1rem',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    padding: '0.4rem 0.55rem',
+                    borderRadius: '999px',
+                    backgroundColor: 'rgba(21, 37, 30, 0.88)',
+                    border: '1px solid rgba(194, 154, 85, 0.55)',
+                    backdropFilter: 'blur(8px)',
+                    maxWidth: 'calc(100vw - 2rem)',
+                    overflowX: 'auto',
+                    zIndex: 6
+                  }}
+                >
+                  {residences.map((res, idx) => {
+                    const isSelected = idx === safeIdx;
+                    return (
+                      <button
+                        key={`fs-${res.city}-${idx}`}
+                        type="button"
+                        className={`map-fullscreen-pill${isSelected ? ' is-active' : ''}`}
+                        onClick={() => setActiveIdx(idx)}
+                      >
+                        <MapPin size={12} />
+                        <span>{res.city}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
