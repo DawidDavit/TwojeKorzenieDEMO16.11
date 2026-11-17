@@ -18,7 +18,18 @@ const SHOWCASE_TILES = [
     label: '01 · Galeria Rodu',
     title: 'Księga Rodu & Portrety Przodków',
     portalView: 'dashboard',
-    cta: 'Otwórz Panel Klienta'
+    cta: 'Otwórz Panel Klienta',
+    summary:
+      'Centralne miejsce Twojego rodu: odrestaurowane portrety archiwalne, oś pokoleń i szybki dostęp do zweryfikowanych akt.',
+    highlights: [
+      'Indywidualne karty przodków z metrykami',
+      'Porządek pokoleń od współczesności w głąb XIX w.',
+      'Stały podgląd postępów prac archiwisty'
+    ],
+    metrics: [
+      { value: '11', label: 'przodków w drzewie' },
+      { value: '5', label: 'udokumentowanych pokoleń' }
+    ]
   },
   {
     id: 2,
@@ -27,7 +38,18 @@ const SHOWCASE_TILES = [
     label: '02 · Storytelling',
     title: 'Biografia & Rozdziały Życia',
     portalView: 'story',
-    cta: 'Czytaj Historię'
+    cta: 'Czytaj Historię',
+    summary:
+      'Suche daty z ksiąg parafialnych zamieniamy w spójną opowieść o losach, zawodach i realiach epoki Twoich przodków.',
+    highlights: [
+      'Chronologiczne rozdziały od narodzin po schyłek życia',
+      'Kontekst historyczny zaborów i II RP',
+      'Cytaty i przypisy do oryginalnych ksiąg'
+    ],
+    metrics: [
+      { value: '1857–1940', label: 'oś czasu rodu' },
+      { value: '100%', label: 'faktów opartych na aktach' }
+    ]
   },
   {
     id: 3,
@@ -36,7 +58,18 @@ const SHOWCASE_TILES = [
     label: '03 · Drzewo 2D',
     title: 'Interaktywne Drzewo Rodowe',
     portalView: 'tree',
-    cta: 'Zobacz Drzewo'
+    cta: 'Zobacz Drzewo',
+    summary:
+      'Czytelna mapa powiązań rodzinnych: rodzice, małżonkowie, rodzeństwo i gałęzie boczne z możliwością zbliżania i filtrowania.',
+    highlights: [
+      'Nawigacja po gałęziach ojczystych i macierzystych',
+      'Natychmiastowe przejście do biografii wybranej osoby',
+      'Możliwość zgłaszania własnych wskazówek rodzinnych'
+    ],
+    metrics: [
+      { value: '2D', label: 'interaktywna siatka linii' },
+      { value: '3 kliknięcia', label: 'do dowolnego przodka' }
+    ]
   },
   {
     id: 4,
@@ -45,7 +78,18 @@ const SHOWCASE_TILES = [
     label: '04 · Archiwum',
     title: 'Skany Metrykalne & Akta USC',
     portalView: 'archive',
-    cta: 'Przeglądaj Akta'
+    cta: 'Przeglądaj Akta',
+    summary:
+      'Cyfrowe repozytorium oryginalnych skanów z archiwów państwowych i parafialnych wraz z pełną transkrypcją na język polski.',
+    highlights: [
+      'Tłumaczenia z łaciny, cyrylicy i pisma neogotyckiego',
+      'Sygnatury zespołów i numeracja ksiąg metrykalnych',
+      'Powiększanie skanów w trybie lupy archiwalnej'
+    ],
+    metrics: [
+      { value: '8', label: 'zweryfikowanych aktów USC' },
+      { value: '300 DPI', label: 'jakość skanów źródłowych' }
+    ]
   },
   {
     id: 5,
@@ -54,7 +98,18 @@ const SHOWCASE_TILES = [
     label: '05 · Kartografia & PDF',
     title: 'Mapa Migracji & Eksport Księgi',
     portalView: 'dashboard',
-    cta: 'Eksploruj Mapę'
+    cta: 'Eksploruj Mapę',
+    summary:
+      'Śledź wędrówki przodków na mapie satelitarnej bez zbędnych oznaczeń współczesnych i pobierz gotową księgę rodu w PDF.',
+    highlights: [
+      'Widok satelitarny z historycznymi nazwami miejscowości',
+      'Tryb pełnoekranowy jednym kliknięciem',
+      'Eksport gotowego opracowania do druku lub archiwum'
+    ],
+    metrics: [
+      { value: 'PDF', label: 'gotowy do druku A4' },
+      { value: 'GPS', label: 'szlak migracji na mapie' }
+    ]
   }
 ];
 
@@ -127,9 +182,9 @@ export default function AppPresentationShowcase({ onEnterPortal }) {
         const others = SHOWCASE_TILES.filter((t) => t.id !== activeId);
         // Kolejność w doku: 2 po lewej, 2 po prawej
         const dockSlots = [-1.65, -0.62, 0.62, 1.65];
-        const dockSpacing = vw < 640 ? 78 : vw < 1024 ? 102 : 120;
-        const dockY = vw < 640 ? 60 : 72;
-        const dockScale = vw < 640 ? 0.27 : 0.30;
+        const dockSpacing = vw < 640 ? 78 : vw < 1024 ? 106 : 128;
+        const dockY = vw < 640 ? 60 : 76;
+        const dockScale = vw < 640 ? 0.27 : 0.33;
 
         const targets = SHOWCASE_TILES.map((tile) => {
           if (tile.id === activeId) {
@@ -280,6 +335,8 @@ export default function AppPresentationShowcase({ onEnterPortal }) {
     return tile.zIndex;
   };
 
+  const activeTileData = SHOWCASE_TILES.find((t) => t.id === selectedTile) || null;
+
   return (
     <section
       id="prezentacja-aplikacji"
@@ -290,6 +347,11 @@ export default function AppPresentationShowcase({ onEnterPortal }) {
         {/* Sticky tor scrolla: nagłówek + 5 kafelków mieszczą się razem w widoku podczas rozsuwania */}
         <div ref={trackRef} className="presentation-scroll-track">
           <div ref={frameRef} className="presentation-sticky-frame">
+            <div className="presentation-backdrop" aria-hidden="true">
+              <div className="presentation-backdrop-ring presentation-backdrop-ring--outer" />
+              <div className="presentation-backdrop-ring presentation-backdrop-ring--inner" />
+            </div>
+
             <div className="presentation-header">
               <div className="badge badge-gold">
                 <Sparkles size={13} /> Prezentacja Aplikacji TwojeKorzenie
@@ -305,6 +367,60 @@ export default function AppPresentationShowcase({ onEnterPortal }) {
             </div>
 
             <div className={`presentation-stage-wrap ${selectedTile !== null ? 'has-selection' : ''}`}>
+              {/* Boczne panele kontekstowe (widoczne na desktopie po wybraniu modułu) */}
+              <aside
+                className={`presentation-flank presentation-flank--left ${activeTileData ? 'is-visible' : ''}`}
+                aria-hidden={!activeTileData}
+              >
+                {activeTileData && (
+                  <>
+                    <div className="presentation-flank-kicker">{activeTileData.label}</div>
+                    <h3 className="presentation-flank-title">{activeTileData.title}</h3>
+                    <p className="presentation-flank-desc">{activeTileData.summary}</p>
+                    <ul className="presentation-flank-list">
+                      {activeTileData.highlights.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </aside>
+
+              <aside
+                className={`presentation-flank presentation-flank--right ${activeTileData ? 'is-visible' : ''}`}
+                aria-hidden={!activeTileData}
+              >
+                {activeTileData && (
+                  <>
+                    <div className="presentation-flank-kicker">Zawartość modułu</div>
+                    <div className="presentation-flank-metrics">
+                      {activeTileData.metrics.map((m) => (
+                        <div key={m.label} className="presentation-flank-metric">
+                          <strong>{m.value}</strong>
+                          <span>{m.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-gold presentation-flank-cta"
+                      onClick={() => handleOpenPortal(activeTileData.portalView)}
+                      tabIndex={activeTileData ? 0 : -1}
+                    >
+                      {activeTileData.cta} <ArrowRight size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      className="presentation-flank-reset"
+                      onClick={() => setSelectedTile(null)}
+                      tabIndex={activeTileData ? 0 : -1}
+                    >
+                      Pokaż wszystkie 5 modułów
+                    </button>
+                  </>
+                )}
+              </aside>
+
               <div
                 className="presentation-stage"
                 role="region"
