@@ -203,6 +203,29 @@ export default function InteractiveFamilyTree({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isFullPane, showAddModal, onToggleFullPane]);
 
+  // Płynne przewijanie (scroll/trackpad) oraz zoom (Ctrl+scroll) w trybie pełnego widoku
+  useEffect(() => {
+    if (!isFullPane || viewMode !== 'tree') return undefined;
+    const el = viewportRef.current;
+    if (!el) return undefined;
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      if (e.ctrlKey || e.metaKey) {
+        const delta = e.deltaY < 0 ? 0.08 : -0.08;
+        setZoom((z) => Math.min(1.6, Math.max(0.55, +(z + delta).toFixed(2))));
+      } else {
+        setPan((prev) => ({
+          x: prev.x - e.deltaX,
+          y: prev.y - e.deltaY
+        }));
+      }
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [isFullPane, viewMode]);
+
   return (
     <div
       className="animate-fade-in"
@@ -217,38 +240,20 @@ export default function InteractiveFamilyTree({
           : undefined
       }
     >
-      {/* Pasek narzędziowy Interaktywnego Drzewa Genealogicznego */}
-      <div
-        className="heritage-card"
-        style={
-          isFullPane
-            ? {
-                padding: '0.75rem 1.25rem',
-                marginBottom: 0,
-                borderRadius: 0,
-                borderLeft: 'none',
-                borderRight: 'none',
-                borderTop: 'none',
-                borderBottom: '1.5px solid rgba(194, 154, 85, 0.45)',
-                boxShadow: 'none',
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.75rem',
-                flexShrink: 0
-              }
-            : {
-                padding: '1.25rem 1.5rem',
-                marginBottom: '1.25rem',
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '1rem'
-              }
-        }
-      >
+      {/* Pasek narzędziowy Interaktywnego Drzewa Genealogicznego (widoczny poza pełnym widokiem) */}
+      {!isFullPane && (
+        <div
+          className="heritage-card"
+          style={{
+            padding: '1.25rem 1.5rem',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem'
+          }}
+        >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span className="gold-badge">
@@ -381,28 +386,29 @@ export default function InteractiveFamilyTree({
               type="button"
               onClick={onToggleFullPane}
               aria-pressed={isFullPane}
-              title={isFullPane ? 'Wróć do widoku standardowego (Esc)' : 'Rozwiń drzewo na całą prawą sekcję'}
+              title="Rozwiń drzewo na całą prawą sekcję"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.45rem',
                 padding: '0.55rem 1rem',
                 borderRadius: '999px',
-                border: isFullPane ? '1.5px solid var(--gold-base)' : '1px solid var(--forest-base)',
-                backgroundColor: isFullPane ? 'var(--forest-base)' : 'var(--ivory-base)',
-                color: isFullPane ? '#F3EFE5' : 'var(--forest-base)',
+                border: '1px solid var(--forest-base)',
+                backgroundColor: 'var(--ivory-base)',
+                color: 'var(--forest-base)',
                 fontWeight: 600,
                 fontSize: '0.86rem',
                 cursor: 'pointer',
                 transition: 'background-color 180ms ease, color 180ms ease, border-color 180ms ease'
               }}
             >
-              {isFullPane ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-              <span>{isFullPane ? 'Zwiń widok' : 'Pełny widok'}</span>
+              <Maximize2 size={15} />
+              <span>Pełny widok</span>
             </button>
           )}
         </div>
       </div>
+      )}
 
       {/* WIDOK 1: INTERAKTYWNA MAPA DRZEWA GENEALOGICZNEGO 2D */}
       {viewMode === 'tree' ? (
@@ -430,7 +436,8 @@ export default function InteractiveFamilyTree({
                     overflow: 'hidden',
                     borderRadius: 0,
                     border: 'none',
-                    boxShadow: 'none'
+                    boxShadow: 'none',
+                    touchAction: 'none'
                   }
                 : {
                     height: '650px',
@@ -520,28 +527,64 @@ export default function InteractiveFamilyTree({
               >
                 <RotateCcw size={14} /> Resetuj widok
               </button>
-              <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', marginLeft: '0.35rem' }}>
-                <Move size={13} /> Przeciągnij myszą lub dotykiem, kliknij kartę aby otworzyć profil
-              </span>
+              {!isFullPane && (
+                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', marginLeft: '0.35rem' }}>
+                  <Move size={13} /> Przeciągnij myszą lub dotykiem, kliknij kartę aby otworzyć profil
+                </span>
+              )}
             </div>
 
-            {/* Róża wiatrów / Znak wodny kartografii rodu */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '1rem',
-                right: '1.25rem',
-                zIndex: 15,
-                backgroundColor: 'rgba(23, 47, 37, 0.9)',
-                color: '#F3EFE5',
-                padding: '0.55rem 1rem',
-                borderRadius: '12px',
-                border: '1px solid #C29A55',
-                fontSize: '0.76rem'
-              }}
-            >
-              <strong style={{ color: '#E5C98F' }}>Legenda Mapy:</strong> Złota ramka = Wybrana osoba • Zielona pieczęć = Zweryfikowano w Archiwum
-            </div>
+            {/* Pływający przycisk powrotu z pełnego widoku */}
+            {isFullPane && onToggleFullPane && (
+              <button
+                type="button"
+                onClick={onToggleFullPane}
+                aria-pressed={isFullPane}
+                title="Wróć do widoku standardowego (Esc)"
+                style={{
+                  position: 'absolute',
+                  top: '1rem',
+                  right: '1.25rem',
+                  zIndex: 20,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  padding: '0.55rem 1rem',
+                  borderRadius: '999px',
+                  border: '1.5px solid var(--gold-base)',
+                  backgroundColor: 'var(--forest-base)',
+                  color: '#F3EFE5',
+                  fontWeight: 600,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 20px rgba(23, 47, 37, 0.22)',
+                  transition: 'transform 160ms ease, background-color 180ms ease'
+                }}
+              >
+                <Minimize2 size={15} color="#E5C98F" />
+                <span>Zwiń widok</span>
+              </button>
+            )}
+
+            {/* Róża wiatrów / Znak wodny kartografii rodu (ukryty w pełnym widoku) */}
+            {!isFullPane && (
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '1rem',
+                  right: '1.25rem',
+                  zIndex: 15,
+                  backgroundColor: 'rgba(23, 47, 37, 0.9)',
+                  color: '#F3EFE5',
+                  padding: '0.55rem 1rem',
+                  borderRadius: '12px',
+                  border: '1px solid #C29A55',
+                  fontSize: '0.76rem'
+                }}
+              >
+                <strong style={{ color: '#E5C98F' }}>Legenda Mapy:</strong> Złota ramka = Wybrana osoba • Zielona pieczęć = Zweryfikowano w Archiwum
+              </div>
+            )}
 
             {/* Przesuwalna i skalowalna warstwa płótna */}
             <div
@@ -752,39 +795,20 @@ export default function InteractiveFamilyTree({
             </div>
           </div>
 
-          {/* Dolny pasek szczegółów wybranego z drzewa przodka */}
-          {selectedAncestor && (
+          {/* Dolny pasek szczegółów wybranego z drzewa przodka (widoczny poza pełnym widokiem) */}
+          {!isFullPane && selectedAncestor && (
             <div
               className="heritage-card animate-fade-in"
-              style={
-                isFullPane
-                  ? {
-                      flexShrink: 0,
-                      padding: '0.85rem 1.25rem',
-                      borderRadius: 0,
-                      borderLeft: 'none',
-                      borderRight: 'none',
-                      borderBottom: 'none',
-                      borderTop: '1.5px solid var(--gold-base)',
-                      boxShadow: 'none',
-                      background: 'linear-gradient(135deg, #FAF8F2 0%, #F1EBDD 100%)',
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '1rem'
-                    }
-                  : {
-                      padding: '1.4rem 1.75rem',
-                      border: '2px solid var(--gold-base)',
-                      background: 'linear-gradient(135deg, #FAF8F2 0%, #F1EBDD 100%)',
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '1.25rem'
-                    }
-              }
+              style={{
+                padding: '1.4rem 1.75rem',
+                border: '2px solid var(--gold-base)',
+                background: 'linear-gradient(135deg, #FAF8F2 0%, #F1EBDD 100%)',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1.25rem'
+              }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.15rem', maxWidth: '760px' }}>
                 <AncestorPortrait ancestor={selectedAncestor} size={74} />
