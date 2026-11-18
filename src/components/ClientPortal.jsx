@@ -71,7 +71,9 @@ export default function ClientPortal({
   onUnsubscribeMarketing,
   onOpenLegalCenter,
   auditLogs = [],
-  onRefreshData
+  onRefreshData,
+  isTreeFullPane = false,
+  onToggleTreeFullPane
 }) {
   const [selectedAncestor, setSelectedAncestor] = useState(ancestors[0]);
   const [selectedArchiveCategory, setSelectedArchiveCategory] = useState('Wszystkie');
@@ -83,7 +85,6 @@ export default function ClientPortal({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [exportedDataJson, setExportedDataJson] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isTreeFullPane, setIsTreeFullPane] = useState(false);
 
   // Stan Panelu Administratora (Supabase RBAC)
   const [adminClients, setAdminClients] = useState([]);
@@ -249,7 +250,10 @@ export default function ClientPortal({
   const isFullTreeActive = activeSection === 'tree' && isTreeFullPane;
 
   return (
-    <div className={`portal-layout archival-bg${isSidebarCollapsed ? ' is-sidebar-collapsed' : ''}`}>
+    <div
+      className={`portal-layout archival-bg${isSidebarCollapsed ? ' is-sidebar-collapsed' : ''}`}
+      style={isFullTreeActive ? { minHeight: '100vh' } : undefined}
+    >
       {/* 8. SIDEBAR PANELU KLIENTA */}
       <aside
         style={{
@@ -475,7 +479,7 @@ export default function ClientPortal({
                 padding: 0,
                 maxWidth: 'none',
                 width: '100%',
-                height: 'calc(100vh - 76px)',
+                height: '100vh',
                 margin: 0,
                 overflow: 'hidden',
                 display: 'flex',
@@ -837,7 +841,7 @@ export default function ClientPortal({
             onOpenStorytelling={handleOpenStoryForAncestor}
             onAddAncestorClue={onAddAncestorClue}
             isFullPane={isTreeFullPane}
-            onToggleFullPane={() => setIsTreeFullPane((prev) => !prev)}
+            onToggleFullPane={onToggleTreeFullPane}
           />
         )}
 

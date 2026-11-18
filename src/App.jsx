@@ -47,8 +47,10 @@ export default function App() {
     GenealogyRepository.getDocuments()
   );
   const [authLoading, setAuthLoading] = useState(() => SupabaseRepository.isEnabled());
+  const [isTreeFullPane, setIsTreeFullPane] = useState(false);
 
   const isAuthenticated = Boolean(currentSession?.isAuthenticated);
+  const hideChromeForFullTree = activeArea === 'portal' && portalSection === 'tree' && isTreeFullPane;
   const services = GenealogyRepository.getServices();
   const collaborationSteps = GenealogyRepository.getCollaborationSteps();
   const archiveCategories = GenealogyRepository.getArchiveCategories();
@@ -324,20 +326,22 @@ export default function App() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <HeritageLoader visible={authLoading} />
-      <Navbar
-        activeArea={activeArea}
-        setActiveArea={setActiveArea}
-        portalSection={portalSection}
-        setPortalSection={setPortalSection}
-        dataMode={dataMode}
-        onToggleDataMode={handleToggleDataMode}
-        clientAccount={clientAccount}
-        isAuthenticated={isAuthenticated}
-        userRole={currentSession?.role || 'client'}
-        onOpenAuthModal={handleOpenAuthModal}
-        onLogout={handleLogout}
-        onOpenLegalCenter={handleOpenLegalCenter}
-      />
+      {!hideChromeForFullTree && (
+        <Navbar
+          activeArea={activeArea}
+          setActiveArea={setActiveArea}
+          portalSection={portalSection}
+          setPortalSection={setPortalSection}
+          dataMode={dataMode}
+          onToggleDataMode={handleToggleDataMode}
+          clientAccount={clientAccount}
+          isAuthenticated={isAuthenticated}
+          userRole={currentSession?.role || 'client'}
+          onOpenAuthModal={handleOpenAuthModal}
+          onLogout={handleLogout}
+          onOpenLegalCenter={handleOpenLegalCenter}
+        />
+      )}
 
       {dbSetupWarning && (
         <div
@@ -451,18 +455,22 @@ export default function App() {
             onOpenLegalCenter={handleOpenLegalCenter}
             auditLogs={auditLogs}
             onRefreshData={loadSupabaseUserData}
+            isTreeFullPane={isTreeFullPane}
+            onToggleTreeFullPane={() => setIsTreeFullPane((prev) => !prev)}
           />
         )}
       </div>
 
-      <Footer
-        onNavigateLanding={handleNavigateLanding}
-        onNavigatePortal={handleEnterPortal}
-        onOpenAuthModal={handleOpenAuthModal}
-        onOpenLegalCenter={handleOpenLegalCenter}
-        onOpenCookieBanner={() => setCookieBannerOverride(true)}
-        onUnsubscribeMarketing={handleUnsubscribeMarketing}
-      />
+      {!hideChromeForFullTree && (
+        <Footer
+          onNavigateLanding={handleNavigateLanding}
+          onNavigatePortal={handleEnterPortal}
+          onOpenAuthModal={handleOpenAuthModal}
+          onOpenLegalCenter={handleOpenLegalCenter}
+          onOpenCookieBanner={() => setCookieBannerOverride(true)}
+          onUnsubscribeMarketing={handleUnsubscribeMarketing}
+        />
+      )}
 
       {/* Lightbox do powiększania skanów dokumentów */}
       <DocumentLightbox
