@@ -20,7 +20,9 @@ import {
   Download,
   Trash2,
   Lock,
-  AlertTriangle
+  AlertTriangle,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import InteractiveFamilyTree from './InteractiveFamilyTree';
 import AncestorStorytelling from './AncestorStorytelling';
@@ -80,6 +82,8 @@ export default function ClientPortal({
   const [invoicePreview, setInvoicePreview] = useState(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [exportedDataJson, setExportedDataJson] = useState(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isTreeFullPane, setIsTreeFullPane] = useState(false);
 
   // Stan Panelu Administratora (Supabase RBAC)
   const [adminClients, setAdminClients] = useState([]);
@@ -242,60 +246,160 @@ export default function ClientPortal({
 
   const generationsCount = new Set(ancestors.map((a) => a.generation)).size;
 
+  const isFullTreeActive = activeSection === 'tree' && isTreeFullPane;
+
   return (
-    <div className="portal-layout archival-bg">
+    <div className={`portal-layout archival-bg${isSidebarCollapsed ? ' is-sidebar-collapsed' : ''}`}>
       {/* 8. SIDEBAR PANELU KLIENTA */}
       <aside
         style={{
           backgroundColor: '#172F25',
           color: '#F3EFE5',
-          padding: '1.5rem 1.15rem',
+          padding: isSidebarCollapsed ? '1.1rem 0.65rem' : '1.25rem 1.15rem',
           borderRight: '1.5px solid rgba(194, 154, 85, 0.35)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          gap: '1.5rem'
+          gap: '1.25rem',
+          transition: 'padding 220ms cubic-bezier(0.22, 1, 0.36, 1)'
         }}
       >
         <div>
-          {/* Wizytówka właściciela archiwum */}
+          {/* Pasek marki z logo i przyciskiem chowania panelu bocznego */}
           <div
             style={{
-              backgroundColor: 'rgba(243, 239, 229, 0.07)',
-              border: '1px solid rgba(194, 154, 85, 0.38)',
-              borderRadius: '18px',
-              padding: '1.1rem',
-              marginBottom: '1.4rem'
+              display: 'flex',
+              flexDirection: isSidebarCollapsed ? 'column' : 'row',
+              alignItems: 'center',
+              justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
+              gap: '0.65rem',
+              marginBottom: isSidebarCollapsed ? '1.1rem' : '1rem',
+              paddingBottom: '0.85rem',
+              borderBottom: '1px solid rgba(194, 154, 85, 0.22)'
             }}
           >
-            <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#E5C98F', marginBottom: '0.25rem' }}>
-              Prywatne Archiwum Rodu
-            </div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: '1.22rem', fontWeight: 700, color: '#F3EFE5' }}>
-              {clientAccount.firstName} {clientAccount.lastName}
-            </div>
-            <div style={{ fontSize: '0.78rem', color: '#C9D5CE', marginTop: '0.2rem' }}>
-              {clientAccount.activePackageName}
-            </div>
-            <div style={{ marginTop: '0.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '0.25rem', color: '#E5C98F' }}>
-                <span>Postęp kwerendy</span>
-                <strong>{clientAccount.researchProgress}%</strong>
-              </div>
-              <div style={{ height: '7px', backgroundColor: 'rgba(243,239,229,0.16)', borderRadius: '99px', overflow: 'hidden' }}>
-                <div
-                  style={{
-                    width: `${clientAccount.researchProgress}%`,
-                    height: '100%',
-                    background: 'linear-gradient(90deg, #C29A55, #E5C98F)'
-                  }}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.65rem',
+                minWidth: 0
+              }}
+            >
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '11px',
+                  backgroundColor: 'rgba(243, 239, 229, 0.08)',
+                  border: '1.5px solid rgba(194, 154, 85, 0.65)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.18)'
+                }}
+              >
+                <img
+                  src={`${import.meta.env.BASE_URL}logo-mark-gold.png`}
+                  alt="Logo TwojeKorzenie"
+                  style={{ width: '28px', height: '28px', objectFit: 'contain', display: 'block' }}
                 />
               </div>
+              {!isSidebarCollapsed && (
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-serif)',
+                      fontSize: '1.05rem',
+                      fontWeight: 700,
+                      color: '#F3EFE5',
+                      lineHeight: 1.1,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    Twoje<span style={{ color: '#E5C98F' }}>Korzenie</span>
+                  </div>
+                  <div style={{ fontSize: '0.66rem', color: '#C9D5CE', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    Archiwum Rodu
+                  </div>
+                </div>
+              )}
             </div>
+
+            <button
+              type="button"
+              onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+              aria-expanded={!isSidebarCollapsed}
+              aria-label={isSidebarCollapsed ? 'Rozwiń pasek boczny' : 'Schowaj zakładki paska bocznego'}
+              title={isSidebarCollapsed ? 'Rozwiń pasek boczny' : 'Schowaj zakładki (zostaw logo)'}
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '10px',
+                border: '1px solid rgba(194, 154, 85, 0.45)',
+                backgroundColor: 'rgba(243, 239, 229, 0.08)',
+                color: '#E5C98F',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'background-color 180ms ease, border-color 180ms ease'
+              }}
+            >
+              {isSidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+            </button>
           </div>
 
+          {/* Wizytówka właściciela archiwum (ukryta po zwinięciu) */}
+          {!isSidebarCollapsed && (
+            <div
+              style={{
+                backgroundColor: 'rgba(243, 239, 229, 0.07)',
+                border: '1px solid rgba(194, 154, 85, 0.38)',
+                borderRadius: '18px',
+                padding: '1.1rem',
+                marginBottom: '1.25rem'
+              }}
+            >
+              <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#E5C98F', marginBottom: '0.25rem' }}>
+                Prywatne Archiwum Rodu
+              </div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: '1.22rem', fontWeight: 700, color: '#F3EFE5' }}>
+                {clientAccount.firstName} {clientAccount.lastName}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#C9D5CE', marginTop: '0.2rem' }}>
+                {clientAccount.activePackageName}
+              </div>
+              <div style={{ marginTop: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '0.25rem', color: '#E5C98F' }}>
+                  <span>Postęp kwerendy</span>
+                  <strong>{clientAccount.researchProgress}%</strong>
+                </div>
+                <div style={{ height: '7px', backgroundColor: 'rgba(243,239,229,0.16)', borderRadius: '99px', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${clientAccount.researchProgress}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #C29A55, #E5C98F)'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Menu nawigacyjne (7 wymaganych sekcji) */}
-          <nav aria-label="Nawigacja Panelu Klienta" style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <nav
+            aria-label="Nawigacja Panelu Klienta"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: isSidebarCollapsed ? 'center' : 'stretch',
+              gap: '0.35rem'
+            }}
+          >
             {SIDEBAR_ITEMS.map((item) => {
               const IconComp = item.icon;
               const isActive = activeSection === item.id;
@@ -303,6 +407,8 @@ export default function ClientPortal({
                 <button
                   key={item.id}
                   type="button"
+                  title={isSidebarCollapsed ? item.label : undefined}
+                  aria-label={item.label}
                   onClick={() => {
                     setActiveSection(item.id);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -310,9 +416,11 @@ export default function ClientPortal({
                   style={{
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
                     gap: '0.8rem',
-                    width: '100%',
-                    padding: '0.82rem 1rem',
+                    width: isSidebarCollapsed ? '44px' : '100%',
+                    height: isSidebarCollapsed ? '44px' : 'auto',
+                    padding: isSidebarCollapsed ? '0' : '0.82rem 1rem',
                     borderRadius: '14px',
                     border: isActive ? '1px solid #C29A55' : '1px solid transparent',
                     backgroundColor: isActive ? 'rgba(194, 154, 85, 0.2)' : 'transparent',
@@ -324,41 +432,58 @@ export default function ClientPortal({
                     transition: 'background-color 180ms ease, border-color 180ms ease, color 180ms ease'
                   }}
                 >
-                  <IconComp size={19} color={isActive ? '#E5C98F' : '#C9D5CE'} />
-                  <span>{item.label}</span>
+                  <IconComp size={19} color={isActive ? '#E5C98F' : '#C9D5CE'} style={{ flexShrink: 0 }} />
+                  {!isSidebarCollapsed && <span>{item.label}</span>}
                 </button>
               );
             })}
           </nav>
         </div>
 
-        {/* Opiekun genealogiczny */}
-        <div
-          style={{
-            backgroundColor: 'rgba(194, 154, 85, 0.12)',
-            border: '1px solid rgba(194, 154, 85, 0.35)',
-            borderRadius: '16px',
-            padding: '1rem',
-            fontSize: '0.8rem'
-          }}
-        >
-          <div style={{ color: '#E5C98F', fontWeight: 700, marginBottom: '0.25rem' }}>
-            Twój Opiekun Naukowy:
-          </div>
-          <div style={{ color: '#F3EFE5', fontWeight: 600 }}>{clientAccount.leadGenealogist}</div>
-          <button
-            type="button"
-            onClick={() => onOpenOrderModal(null)}
-            className="btn-gold"
-            style={{ width: '100%', marginTop: '0.75rem', padding: '0.55rem 0.85rem', fontSize: '0.8rem' }}
+        {/* Opiekun genealogiczny (ukryty po zwinięciu) */}
+        {!isSidebarCollapsed && (
+          <div
+            style={{
+              backgroundColor: 'rgba(194, 154, 85, 0.12)',
+              border: '1px solid rgba(194, 154, 85, 0.35)',
+              borderRadius: '16px',
+              padding: '1rem',
+              fontSize: '0.8rem'
+            }}
           >
-            Rozszerz badania / Zamów pakiet
-          </button>
-        </div>
+            <div style={{ color: '#E5C98F', fontWeight: 700, marginBottom: '0.25rem' }}>
+              Twój Opiekun Naukowy:
+            </div>
+            <div style={{ color: '#F3EFE5', fontWeight: 600 }}>{clientAccount.leadGenealogist}</div>
+            <button
+              type="button"
+              onClick={() => onOpenOrderModal(null)}
+              className="btn-gold"
+              style={{ width: '100%', marginTop: '0.75rem', padding: '0.55rem 0.85rem', fontSize: '0.8rem' }}
+            >
+              Rozszerz badania / Zamów pakiet
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* GŁÓWNY OBSZAR ROBOCZY PANELU KLIENTA */}
-      <main style={{ padding: 'clamp(1.25rem, 3vw, 2.5rem)', maxWidth: '1320px', width: '100%', margin: '0 auto' }}>
+      <main
+        style={
+          isFullTreeActive
+            ? {
+                padding: 0,
+                maxWidth: 'none',
+                width: '100%',
+                height: 'calc(100vh - 76px)',
+                margin: 0,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column'
+              }
+            : { padding: 'clamp(1.25rem, 3vw, 2.5rem)', maxWidth: '1320px', width: '100%', margin: '0 auto' }
+        }
+      >
         {/* ================================================================= */}
         {/* WIDOK 1: MÓJ DASHBOARD (Sekcja 4 i 8 specyfikacji)                */}
         {/* ================================================================= */}
@@ -711,6 +836,8 @@ export default function ClientPortal({
             onSelectAncestor={setSelectedAncestor}
             onOpenStorytelling={handleOpenStoryForAncestor}
             onAddAncestorClue={onAddAncestorClue}
+            isFullPane={isTreeFullPane}
+            onToggleFullPane={() => setIsTreeFullPane((prev) => !prev)}
           />
         )}
 

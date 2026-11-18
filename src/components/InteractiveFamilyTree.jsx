@@ -12,7 +12,9 @@ import {
   CheckCircle2,
   UserPlus,
   Search,
-  AlertTriangle
+  AlertTriangle,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { AncestorPortrait } from './HeritageVisuals';
 import { PlaceAutocompleteInput } from './GoogleMapsComponents';
@@ -44,7 +46,9 @@ export default function InteractiveFamilyTree({
   selectedAncestor,
   onSelectAncestor,
   onOpenStorytelling,
-  onAddAncestorClue
+  onAddAncestorClue,
+  isFullPane = false,
+  onToggleFullPane
 }) {
   const [viewMode, setViewMode] = useState('tree'); // 'tree' | 'list'
   const [zoom, setZoom] = useState(0.92);
@@ -190,20 +194,60 @@ export default function InteractiveFamilyTree({
     }
   };
 
+  useEffect(() => {
+    if (!isFullPane || showAddModal || !onToggleFullPane) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') onToggleFullPane();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isFullPane, showAddModal, onToggleFullPane]);
+
   return (
-    <div className="animate-fade-in">
+    <div
+      className="animate-fade-in"
+      style={
+        isFullPane
+          ? {
+              height: '100%',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column'
+            }
+          : undefined
+      }
+    >
       {/* Pasek narzędziowy Interaktywnego Drzewa Genealogicznego */}
       <div
         className="heritage-card"
-        style={{
-          padding: '1.25rem 1.5rem',
-          marginBottom: '1.25rem',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '1rem'
-        }}
+        style={
+          isFullPane
+            ? {
+                padding: '0.75rem 1.25rem',
+                marginBottom: 0,
+                borderRadius: 0,
+                borderLeft: 'none',
+                borderRight: 'none',
+                borderTop: 'none',
+                borderBottom: '1.5px solid rgba(194, 154, 85, 0.45)',
+                boxShadow: 'none',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.75rem',
+                flexShrink: 0
+              }
+            : {
+                padding: '1.25rem 1.5rem',
+                marginBottom: '1.25rem',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem'
+              }
+        }
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -331,12 +375,44 @@ export default function InteractiveFamilyTree({
             <UserPlus size={16} />
             <span>Dodaj wskazówkę o przodku</span>
           </button>
+
+          {onToggleFullPane && (
+            <button
+              type="button"
+              onClick={onToggleFullPane}
+              aria-pressed={isFullPane}
+              title={isFullPane ? 'Wróć do widoku standardowego (Esc)' : 'Rozwiń drzewo na całą prawą sekcję'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                padding: '0.55rem 1rem',
+                borderRadius: '999px',
+                border: isFullPane ? '1.5px solid var(--gold-base)' : '1px solid var(--forest-base)',
+                backgroundColor: isFullPane ? 'var(--forest-base)' : 'var(--ivory-base)',
+                color: isFullPane ? '#F3EFE5' : 'var(--forest-base)',
+                fontWeight: 600,
+                fontSize: '0.86rem',
+                cursor: 'pointer',
+                transition: 'background-color 180ms ease, color 180ms ease, border-color 180ms ease'
+              }}
+            >
+              {isFullPane ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+              <span>{isFullPane ? 'Zwiń widok' : 'Pełny widok'}</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* WIDOK 1: INTERAKTYWNA MAPA DRZEWA GENEALOGICZNEGO 2D */}
       {viewMode === 'tree' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem' }}>
+        <div
+          style={
+            isFullPane
+              ? { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }
+              : { display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem' }
+          }
+        >
           <div
             ref={viewportRef}
             onPointerDown={handlePointerDown}
@@ -344,12 +420,25 @@ export default function InteractiveFamilyTree({
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
             className="tree-viewport heritage-card"
-            style={{
-              height: '650px',
-              position: 'relative',
-              overflow: 'hidden',
-              border: '2px solid var(--gold-base)'
-            }}
+            style={
+              isFullPane
+                ? {
+                    flex: 1,
+                    minHeight: 0,
+                    height: '100%',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    borderRadius: 0,
+                    border: 'none',
+                    boxShadow: 'none'
+                  }
+                : {
+                    height: '650px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    border: '2px solid var(--gold-base)'
+                  }
+            }
           >
             {/* Pływające kontrolki przybliżania/oddalania i nawigacji */}
             <div
@@ -667,16 +756,35 @@ export default function InteractiveFamilyTree({
           {selectedAncestor && (
             <div
               className="heritage-card animate-fade-in"
-              style={{
-                padding: '1.4rem 1.75rem',
-                border: '2px solid var(--gold-base)',
-                background: 'linear-gradient(135deg, #FAF8F2 0%, #F1EBDD 100%)',
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '1.25rem'
-              }}
+              style={
+                isFullPane
+                  ? {
+                      flexShrink: 0,
+                      padding: '0.85rem 1.25rem',
+                      borderRadius: 0,
+                      borderLeft: 'none',
+                      borderRight: 'none',
+                      borderBottom: 'none',
+                      borderTop: '1.5px solid var(--gold-base)',
+                      boxShadow: 'none',
+                      background: 'linear-gradient(135deg, #FAF8F2 0%, #F1EBDD 100%)',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '1rem'
+                    }
+                  : {
+                      padding: '1.4rem 1.75rem',
+                      border: '2px solid var(--gold-base)',
+                      background: 'linear-gradient(135deg, #FAF8F2 0%, #F1EBDD 100%)',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '1.25rem'
+                    }
+              }
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.15rem', maxWidth: '760px' }}>
                 <AncestorPortrait ancestor={selectedAncestor} size={74} />
@@ -718,7 +826,13 @@ export default function InteractiveFamilyTree({
         </div>
       ) : (
         /* WIDOK 2: WIDOK LISTY POKOLEŃ */
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div
+          style={
+            isFullPane
+              ? { display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1, overflowY: 'auto', padding: '1.25rem' }
+              : { display: 'flex', flexDirection: 'column', gap: '1.5rem' }
+          }
+        >
           {[6, 5, 4, 3, 2, 1].map((genNumber) => {
             const group = filteredAncestors.filter((a) => a.generation === genNumber);
             if (group.length === 0) return null;

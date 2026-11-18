@@ -569,6 +569,11 @@ button, input, select, textarea {
 @media (min-width: 1024px) {
   .portal-layout {
     grid-template-columns: 290px 1fr;
+    transition: grid-template-columns 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .portal-layout.is-sidebar-collapsed {
+    grid-template-columns: 76px 1fr;
   }
 }
 
