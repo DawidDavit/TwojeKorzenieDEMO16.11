@@ -380,32 +380,6 @@ export default function InteractiveFamilyTree({
             <UserPlus size={16} />
             <span>Dodaj wskazówkę o przodku</span>
           </button>
-
-          {onToggleFullPane && (
-            <button
-              type="button"
-              onClick={onToggleFullPane}
-              aria-pressed={isFullPane}
-              title="Rozwiń drzewo na całą prawą sekcję"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                padding: '0.55rem 1rem',
-                borderRadius: '999px',
-                border: '1px solid var(--forest-base)',
-                backgroundColor: 'var(--ivory-base)',
-                color: 'var(--forest-base)',
-                fontWeight: 600,
-                fontSize: '0.86rem',
-                cursor: 'pointer',
-                transition: 'background-color 180ms ease, color 180ms ease, border-color 180ms ease'
-              }}
-            >
-              <Maximize2 size={15} />
-              <span>Pełny widok</span>
-            </button>
-          )}
         </div>
       </div>
       )}
@@ -534,13 +508,13 @@ export default function InteractiveFamilyTree({
               )}
             </div>
 
-            {/* Pływający przycisk powrotu z pełnego widoku */}
-            {isFullPane && onToggleFullPane && (
+            {/* Pływający przycisk pełnego widoku / zwinięcia w prawym górnym rogu mapy */}
+            {onToggleFullPane && (
               <button
                 type="button"
                 onClick={onToggleFullPane}
                 aria-pressed={isFullPane}
-                title="Wróć do widoku standardowego (Esc)"
+                title={isFullPane ? 'Wróć do widoku standardowego (Esc)' : 'Rozwiń drzewo na cały ekran'}
                 style={{
                   position: 'absolute',
                   top: '1rem',
@@ -549,7 +523,7 @@ export default function InteractiveFamilyTree({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.45rem',
-                  padding: '0.55rem 1rem',
+                  padding: '0.55rem 1.05rem',
                   borderRadius: '999px',
                   border: '1.5px solid var(--gold-base)',
                   backgroundColor: 'var(--forest-base)',
@@ -557,12 +531,16 @@ export default function InteractiveFamilyTree({
                   fontWeight: 600,
                   fontSize: '0.84rem',
                   cursor: 'pointer',
-                  boxShadow: '0 8px 20px rgba(23, 47, 37, 0.22)',
+                  boxShadow: '0 8px 20px rgba(23, 47, 37, 0.24)',
                   transition: 'transform 160ms ease, background-color 180ms ease'
                 }}
               >
-                <Minimize2 size={15} color="#E5C98F" />
-                <span>Zwiń widok</span>
+                {isFullPane ? (
+                  <Minimize2 size={15} color="#E5C98F" />
+                ) : (
+                  <Maximize2 size={15} color="#E5C98F" />
+                )}
+                <span>{isFullPane ? 'Zwiń widok' : 'Pełny widok'}</span>
               </button>
             )}
 
