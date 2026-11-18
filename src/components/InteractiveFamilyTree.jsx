@@ -88,21 +88,27 @@ export default function InteractiveFamilyTree({
     setPan({ x: 20, y: 10 });
   };
 
+  const clampPan = (x, y) => ({
+    x: Math.min(450, Math.max(-1100, x)),
+    y: Math.min(300, Math.max(-1050, y))
+  });
+
   const handlePointerDown = (e) => {
     if (e.target.closest('button') || e.target.closest('.ancestor-node-card')) return;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
     setIsDragging(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
   };
 
   const handlePointerMove = (e) => {
     if (!isDragging) return;
-    setPan({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
-    });
+    setPan(clampPan(e.clientX - dragStart.x, e.clientY - dragStart.y));
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e) => {
+    if (e?.currentTarget?.hasPointerCapture?.(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
     setIsDragging(false);
   };
 
@@ -203,9 +209,9 @@ export default function InteractiveFamilyTree({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isFullPane, showAddModal, onToggleFullPane]);
 
-  // Płynne przewijanie (scroll/trackpad) oraz zoom (Ctrl+scroll) w trybie pełnego widoku
+  // Płynne przewijanie (scroll/trackpad) oraz zoom (Ctrl+scroll) w widoku drzewa (podstawowym i pełnym)
   useEffect(() => {
-    if (!isFullPane || viewMode !== 'tree') return undefined;
+    if (viewMode !== 'tree') return undefined;
     const el = viewportRef.current;
     if (!el) return undefined;
 
@@ -215,16 +221,13 @@ export default function InteractiveFamilyTree({
         const delta = e.deltaY < 0 ? 0.08 : -0.08;
         setZoom((z) => Math.min(1.6, Math.max(0.55, +(z + delta).toFixed(2))));
       } else {
-        setPan((prev) => ({
-          x: prev.x - e.deltaX,
-          y: prev.y - e.deltaY
-        }));
+        setPan((prev) => clampPan(prev.x - e.deltaX, prev.y - e.deltaY));
       }
     };
 
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
-  }, [isFullPane, viewMode]);
+  }, [viewMode]);
 
   return (
     <div
@@ -421,25 +424,38 @@ export default function InteractiveFamilyTree({
                   }
             }
           >
-            {/* Pływające kontrolki przybliżania/oddalania i nawigacji */}
+            {/* Górny pasek HUD mapy: lewa pigułka zoomu + prawy przycisk pełnego widoku */}
             <div
               style={{
                 position: 'absolute',
                 top: '1rem',
                 left: '1rem',
+                right: '1.25rem',
                 zIndex: 20,
                 display: 'flex',
                 flexWrap: 'wrap',
                 alignItems: 'center',
-                gap: '0.5rem',
-                backgroundColor: 'rgba(243, 239, 229, 0.94)',
-                backdropFilter: 'blur(8px)',
-                padding: '0.5rem 0.85rem',
-                borderRadius: '999px',
-                border: '1px solid var(--ivory-border)',
-                boxShadow: 'var(--shadow-subtle)'
+                justifyContent: 'space-between',
+                gap: '0.75rem',
+                pointerEvents: 'none'
               }}
             >
+              {/* Pływające kontrolki przybliżania/oddalania i nawigacji */}
+              <div
+                style={{
+                  pointerEvents: 'auto',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  backgroundColor: 'rgba(243, 239, 229, 0.94)',
+                  backdropFilter: 'blur(8px)',
+                  padding: '0.5rem 0.85rem',
+                  borderRadius: '999px',
+                  border: '1px solid var(--ivory-border)',
+                  boxShadow: 'var(--shadow-subtle)'
+                }}
+              >
               <button
                 type="button"
                 onClick={handleZoomOut}
@@ -506,43 +522,42 @@ export default function InteractiveFamilyTree({
                   <Move size={13} /> Przeciągnij myszą lub dotykiem, kliknij kartę aby otworzyć profil
                 </span>
               )}
-            </div>
+              </div>
 
-            {/* Pływający przycisk pełnego widoku / zwinięcia w prawym górnym rogu mapy */}
-            {onToggleFullPane && (
-              <button
-                type="button"
-                onClick={onToggleFullPane}
-                aria-pressed={isFullPane}
-                title={isFullPane ? 'Wróć do widoku standardowego (Esc)' : 'Rozwiń drzewo na cały ekran'}
-                style={{
-                  position: 'absolute',
-                  top: '1rem',
-                  right: '1.25rem',
-                  zIndex: 20,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.45rem',
-                  padding: '0.55rem 1.05rem',
-                  borderRadius: '999px',
-                  border: '1.5px solid var(--gold-base)',
-                  backgroundColor: 'var(--forest-base)',
-                  color: '#F3EFE5',
-                  fontWeight: 600,
-                  fontSize: '0.84rem',
-                  cursor: 'pointer',
-                  boxShadow: '0 8px 20px rgba(23, 47, 37, 0.24)',
-                  transition: 'transform 160ms ease, background-color 180ms ease'
-                }}
-              >
-                {isFullPane ? (
-                  <Minimize2 size={15} color="#E5C98F" />
-                ) : (
-                  <Maximize2 size={15} color="#E5C98F" />
-                )}
-                <span>{isFullPane ? 'Zwiń widok' : 'Pełny widok'}</span>
-              </button>
-            )}
+              {/* Pływający przycisk pełnego widoku / zwinięcia po prawej stronie górnego paska mapy */}
+              {onToggleFullPane && (
+                <button
+                  type="button"
+                  onClick={onToggleFullPane}
+                  aria-pressed={isFullPane}
+                  title={isFullPane ? 'Wróć do widoku standardowego (Esc)' : 'Rozwiń drzewo na cały ekran'}
+                  style={{
+                    pointerEvents: 'auto',
+                    marginLeft: 'auto',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    padding: '0.55rem 1.05rem',
+                    borderRadius: '999px',
+                    border: '1.5px solid var(--gold-base)',
+                    backgroundColor: 'var(--forest-base)',
+                    color: '#F3EFE5',
+                    fontWeight: 600,
+                    fontSize: '0.84rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 8px 20px rgba(23, 47, 37, 0.24)',
+                    transition: 'transform 160ms ease, background-color 180ms ease'
+                  }}
+                >
+                  {isFullPane ? (
+                    <Minimize2 size={15} color="#E5C98F" />
+                  ) : (
+                    <Maximize2 size={15} color="#E5C98F" />
+                  )}
+                  <span>{isFullPane ? 'Zwiń widok' : 'Pełny widok'}</span>
+                </button>
+              )}
+            </div>
 
             {/* Róża wiatrów / Znak wodny kartografii rodu (ukryty w pełnym widoku) */}
             {!isFullPane && (
@@ -569,9 +584,9 @@ export default function InteractiveFamilyTree({
               style={{
                 width: '1460px',
                 height: `${Math.max(880, maxGenInView * 225)}px`,
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})`,
                 transformOrigin: '0 0',
-                transition: isDragging ? 'none' : 'transform 0.15s ease-out',
+                willChange: 'transform',
                 position: 'relative'
               }}
             >
